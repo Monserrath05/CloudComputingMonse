@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://gsdsldjactyltkxwbdiw.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZHNsZGphY3R5bHRreHdiZGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MDUxNTcsImV4cCI6MjA3MDA4MTE1N30.1hLGHX44ipgsJDIpOPHM3mU3CgvC86VdJtFLyYGtlR0";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // Recortado por seguridad
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function agregarEstudiante() {
@@ -7,22 +7,21 @@ async function agregarEstudiante() {
   const correo = document.getElementById("correo").value;
   const clase = document.getElementById("clase").value;
 
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
+  const { data: { user }, error: userError } = await client.auth.getUser();
 
   if (userError || !user) {
     alert("No estás autenticado.");
     return;
   }
 
-  const { error } = await client.from("estudiantes").insert({
-    nombre,
-    correo,
-    clase,
-    user_id: user.id,
-  });
+  const { error } = await client.from("estudiantes").insert([
+    {
+      nombre,
+      correo,
+      clase,
+      user_id: user.id,
+    },
+  ]);
 
   if (error) {
     alert("Error al agregar: " + error.message);
@@ -45,36 +44,40 @@ async function cargarEstudiantes() {
 
   const lista = document.getElementById("lista-estudiantes");
   lista.innerHTML = "";
+
   data.forEach((est) => {
     const item = document.createElement("li");
-    item.textContent = ${est.nombre} (${est.clase});
+    item.textContent = `${est.nombre} (${est.clase})`; // ← CORREGIDO
     lista.appendChild(item);
+
+    // Rellenar select de archivos también aquí
+    const select = document.getElementById("estudiante");
+    const option = document.createElement("option");
+    option.value = est.id;
+    option.textContent = est.nombre;
+    select.appendChild(option);
   });
 }
-
-cargarEstudiantes();
 
 async function subirArchivo() {
   const archivoInput = document.getElementById("archivo");
   const archivo = archivoInput.files[0];
+  const estudianteId = document.getElementById("estudiante").value;
 
-  if (!archivo) {
-    alert("Selecciona un archivo primero.");
+  if (!archivo || !estudianteId) {
+    alert("Selecciona un estudiante y un archivo.");
     return;
   }
 
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
+  const { data: { user }, error: userError } = await client.auth.getUser();
 
   if (userError || !user) {
     alert("Sesión no válida.");
     return;
   }
 
-  const nombreRuta = ${user.id}/${archivo.name};
-  const { data, error } = await client.storage
+  const nombreRuta = `${user.id}/${archivo.name}`; // ← CORREGIDO
+  const { error } = await client.storage
     .from("tareas")
     .upload(nombreRuta, archivo, {
       cacheControl: "3600",
@@ -90,10 +93,7 @@ async function subirArchivo() {
 }
 
 async function listarArchivos() {
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
+  const { data: { user }, error: userError } = await client.auth.getUser();
 
   if (userError || !user) {
     alert("Sesión no válida.");
@@ -102,7 +102,7 @@ async function listarArchivos() {
 
   const { data: archivos, error: listarError } = await client.storage
     .from("tareas")
-    .list(${user.id}, { limit: 20 });
+    .list(user.id, { limit: 20 }); // ← CORREGIDO
 
   const lista = document.getElementById("lista-archivos");
   lista.innerHTML = "";
@@ -115,7 +115,7 @@ async function listarArchivos() {
   archivos.forEach(async (archivo) => {
     const { data: signedUrlData, error: signedUrlError } = await client.storage
       .from("tareas")
-      .createSignedUrl(${user.id}/${archivo.name}, 60);
+      .createSignedUrl(`${user.id}/${archivo.name}`, 60); // ← CORREGIDO
 
     if (signedUrlError) {
       console.error("Error al generar URL firmada:", signedUrlError.message);
@@ -123,7 +123,6 @@ async function listarArchivos() {
     }
 
     const publicUrl = signedUrlData.signedUrl;
-
     const item = document.createElement("li");
 
     const esImagen = archivo.name.match(/\.(jpg|jpeg|png|gif)$/i);
@@ -142,14 +141,12 @@ async function listarArchivos() {
         <a href="${publicUrl}" target="_blank">Ver PDF</a>
       `;
     } else {
-      item.innerHTML = <a href="${publicUrl}" target="_blank">${archivo.name}</a>;
+      item.innerHTML = `<a href="${publicUrl}" target="_blank">${archivo.name}</a>`; // ← CORREGIDO
     }
 
     lista.appendChild(item);
   });
 }
-
-listarArchivos();
 
 async function cerrarSesion() {
   const { error } = await client.auth.signOut();
@@ -162,3 +159,7 @@ async function cerrarSesion() {
     window.location.href = "index.html";
   }
 }
+
+// Iniciar al cargar
+cargarEstudiantes();
+listarArchivos();
