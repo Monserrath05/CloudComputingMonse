@@ -2,6 +2,22 @@ const SUPABASE_URL = "https://gsdsldjactyltkxwbdiw.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZHNsZGphY3R5bHRreHdiZGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MDUxNTcsImV4cCI6MjA3MDA4MTE1N30.1hLGHX44ipgsJDIpOPHM3mU3CgvC86VdJtFLyYGtlR0";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Verificar sesión al cargar la página
+document.addEventListener("DOMContentLoaded", async () => {
+  const { data, error } = await client.auth.getSession();
+
+  if (error || !data.session) {
+    // No hay sesión → redirige al login
+    window.location.href = "index.html"; // Cambia a tu página de login si es diferente
+    return;
+  }
+
+  // Usuario autenticado, carga los datos
+  cargarEstudiantes();
+  listarArchivos();
+});
+
+// Agregar estudiante
 async function agregarEstudiante() {
   const nombre = document.getElementById("nombre").value;
   const correo = document.getElementById("correo").value;
@@ -29,6 +45,7 @@ async function agregarEstudiante() {
   }
 }
 
+// Cargar lista de estudiantes
 async function cargarEstudiantes() {
   const { data, error } = await client
     .from("estudiantes")
@@ -50,8 +67,7 @@ async function cargarEstudiantes() {
   });
 }
 
-cargarEstudiantes();
-
+// Subir archivo
 async function subirArchivo() {
   const archivoInput = document.getElementById("archivo");
   const archivo = archivoInput.files[0];
@@ -84,6 +100,7 @@ async function subirArchivo() {
   }
 }
 
+// Listar archivos
 async function listarArchivos() {
   const { data: userData, error: userError } = await client.auth.getUser();
 
@@ -140,8 +157,7 @@ async function listarArchivos() {
   }
 }
 
-listarArchivos();
-
+// Cerrar sesión
 async function cerrarSesion() {
   const { error } = await client.auth.signOut();
 
