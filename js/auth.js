@@ -14,6 +14,11 @@ async function register() {
   const email = document.getElementById("reg-email").value;
   const password = document.getElementById("reg-password").value;
 
+  if (!email || !password) {
+    alert("Por favor, completa todos los campos.");
+    return;
+  }
+
   const { data, error } = await client.auth.signUp({
     email,
     password,
@@ -22,7 +27,7 @@ async function register() {
   if (error) {
     alert("Error: " + error.message);
   } else {
-    alert("Registro exitoso.");
+    alert("Registro exitoso. Revisa tu correo para confirmar.");
     toggleForms();
   }
 }
@@ -30,6 +35,11 @@ async function register() {
 async function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+    alert("Por favor, completa todos los campos.");
+    return;
+  }
 
   const { data, error } = await client.auth.signInWithPassword({
     email,
@@ -40,8 +50,6 @@ async function login() {
     alert("Error: " + error.message);
   } else {
     alert("Sesión iniciada.");
-    localStorage.setItem("token", data.session.access_token);
-
-     window.location.href = "dashboard.html"; //Registro Estudiantes
+    window.location.href = "dashboard.html";
   }
 }
