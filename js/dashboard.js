@@ -1,5 +1,5 @@
 const SUPABASE_URL = "https://gsdsldjactyltkxwbdiw.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // Recortado por seguridad
+const SUPABASE_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCMVc2o02TcyAIhHp2UNRHOaG+UpDrpkeZDVCAIqFgdkHGfbuiMLqh1kLPutm8Zbt1KFmHisrddVC3O6F5FZXoz4N1zQNOtpSTDr/SUUtjEJaLCvIibkSfQ2/Q6fSqH6GZEz6VUNok916XpefPXW1EFkgEKkjqmpEDafoQRZFHG9sLq5J9nK6AiCNJVB6tycoLjnH/+m8LbKNtairTMTJAMAG0p5VQVUFHgcSsuztGnp9waJGabxi9wZs6AC70nefb3h/HJGyf/y0EACo4RU8wBcUQT2Y5DRTPHLo8ZaC3te2g6JpmWbGWHdsBlNA69DNW5IcSzHQIES+XGc+3vH3fV rsa-key-20250806"; // Recortado por seguridad
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function agregarEstudiante() {
