@@ -1,14 +1,15 @@
-<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Panel - Estudiantes</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="container">
+
     <h1>Panel de Estudiantes</h1>
-    <button onclick="cerrarSesion()" class="cerrar-btn">Cerrar sesión</button>
+<button onclick="cerrarSesion()" class="cerrar-btn">Cerrar sesión</button>
   
     <section class="card">
       <h2>Registrar estudiante</h2>
@@ -18,6 +19,7 @@
       <button onclick="agregarEstudiante()">Agregar</button>
     </section>
 
+   
     <section class="card">
       <h2>Lista de estudiantes</h2>
       <ul id="lista-estudiantes"></ul>
@@ -27,6 +29,7 @@
       <h2>Subir archivo</h2>
       <label for="estudiante">Selecciona un estudiante:</label>
       <select id="estudiante"></select><br /><br />
+
       <input type="file" id="archivo" />
       <button onclick="subirArchivo()">Subir</button>
     </section>
@@ -35,14 +38,8 @@
       <h2>Archivos subidos</h2>
       <ul id="lista-archivos"></ul>
     </section>
-  </div>
 
-  <!-- Librerías -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Scripts -->
-  <script src="js/utils.js"></script>
+    </div>
   <script src="js/dashboard.js"></script>
 </body>
 </html>
