@@ -169,83 +169,69 @@ async function subirArchivo() {
     return;
   }
 
-  const rutaArchivo = `${estudianteId}/${Date.now()}_${archivo.name}`;
+  const formData = new FormData();
+  formData.append("estudianteId", estudianteId);
+  formData.append("archivo", archivo);
 
-  const { error } = await client.storage
-    .from("archivos")
-    .upload(rutaArchivo, archivo);
+  try {
+    const response = await fetch("/upload", {
+      method: "POST",
+      body: formData,
+    });
 
-  if (error) {
-    mostrarToast("Error al subir archivo: " + error.message, "error");
-  } else {
+    if (!response.ok) {
+      throw new Error("Error al subir archivo");
+    }
+
     mostrarToast("Archivo subido con éxito", "success");
     archivoInput.value = "";
-    mostrarArchivos();
+
+    mostrarArchivos(); // Actualizar lista de archivos
+  } catch (error) {
+    mostrarToast(error.message, "error");
   }
 }
 
 async function mostrarArchivos() {
   listaArchivos.innerHTML = "";
 
-  const { data: estudiantes, error: errorEstudiantes } = await client
-    .from("estudiantes")
-    .select("id,nombre");
+  try {
+    const response = await fetch("/archivos"); // Tu endpoint que lista archivos
+    if (!response.ok) throw new Error("Error al obtener archivos");
 
-  if (errorEstudiantes) {
-    mostrarToast("Error al cargar estudiantes: " + errorEstudiantes.message, "error");
-    return;
-  }
+    const data = await response.json();
 
-  for (const estudiante of estudiantes) {
-    // Listar archivos en la carpeta con el id del estudiante
-    const { data: archivos, error: errorArchivos } = await client.storage
-      .from("archivos")
-      .list(estudiante.id.toString());
+    for (const item of data) {
+      if (!item.archivos.length) continue;
 
-    if (errorArchivos) {
-      mostrarToast("Error al listar archivos: " + errorArchivos.message, "error");
-      continue;
-    }
+      const titulo = document.createElement("h3");
+      titulo.textContent = `Archivos de ${item.estudianteNombre}`;
+      listaArchivos.appendChild(titulo);
 
-    if (archivos.length === 0) continue;
+      const ul = document.createElement("ul");
+      for (const archivoNombre of item.archivos) {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = `/uploads/${item.estudianteId}/${archivoNombre}`; 
+        a.textContent = archivoNombre;
+        a.target = "_blank";
 
-    const titulo = document.createElement("h3");
-    titulo.textContent = `Archivos de ${estudiante.nombre}`;
-    listaArchivos.appendChild(titulo);
-
-    const ul = document.createElement("ul");
-
-    for (const archivo of archivos) {
-      // Obtener URL firmada para mostrar archivo
-      const { data: urlData, error: errorUrl } = await client.storage
-        .from("archivos")
-        .createSignedUrl(`${estudiante.id}/${archivo.name}`, 60);
-
-      if (errorUrl) {
-        mostrarToast("Error al generar URL: " + errorUrl.message, "error");
-        continue;
+        li.appendChild(a);
+        ul.appendChild(li);
       }
-
-      const li = document.createElement("li");
-      const a = document.createElement("a");
-      a.href = urlData.signedUrl;
-      a.textContent = archivo.name;
-      a.target = "_blank";
-      li.appendChild(a);
-      ul.appendChild(li);
+      listaArchivos.appendChild(ul);
     }
-    listaArchivos.appendChild(ul);
+  } catch (error) {
+    mostrarToast(error.message, "error");
   }
 }
 
-// Función para cerrar sesión (si usas autenticación)
 function cerrarSesion() {
   client.auth.signOut();
   localStorage.removeItem("token");
   window.location.href = "index.html";
 }
 
-// Cargar estudiantes y archivos al cargar la página
 document.addEventListener("DOMContentLoaded", () => {
   cargarEstudiantes();
 });
