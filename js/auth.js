@@ -3,9 +3,10 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
+// Mostrar notificaciones tipo toast automáticas
 function mostrarToast(mensaje, tipo = "info", duracion = 3000) {
   const contenedor = document.getElementById("toast-container");
-  if (!contenedor) return; // Por si no existe
+  if (!contenedor) return;
 
   const toast = document.createElement("div");
   toast.textContent = mensaje;
@@ -40,46 +41,60 @@ function mostrarToast(mensaje, tipo = "info", duracion = 3000) {
   }, duracion);
 }
 
+// Mostrar u ocultar formularios de login y registro
 function toggleForms() {
   const loginForm = document.getElementById("login-form");
   const registerForm = document.getElementById("register-form");
 
-  loginForm.style.display = loginForm.style.display === "none" ? "block" : "none";
-  registerForm.style.display = registerForm.style.display === "none" ? "block" : "none";
+  // Si login está visible, ocultarlo y mostrar registro, y viceversa
+  if (loginForm.style.display === "none" || loginForm.style.display === "") {
+    loginForm.style.display = "block";
+    registerForm.style.display = "none";
+  } else {
+    loginForm.style.display = "none";
+    registerForm.style.display = "block";
+  }
 }
 
+// Registrar nuevo usuario
 async function register() {
-  const email = document.getElementById("reg-email").value;
-  const password = document.getElementById("reg-password").value;
+  const email = document.getElementById("reg-email").value.trim();
+  const password = document.getElementById("reg-password").value.trim();
 
-  const { data, error } = await client.auth.signUp({
-    email,
-    password,
-  });
+  if (!email || !password) {
+    mostrarToast("Por favor llena todos los campos", "error");
+    return;
+  }
+
+  const { data, error } = await client.auth.signUp({ email, password });
 
   if (error) {
     mostrarToast("Error: " + error.message, "error");
   } else {
-    mostrarToast("Registro exitoso.", "success");
+    mostrarToast("Registro exitoso. Revisa tu correo para verificar.", "success");
     toggleForms();
   }
 }
 
+// Iniciar sesión
 async function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-  const { data, error } = await client.auth.signInWithPassword({
-    email,
-    password,
-  });
+  if (!email || !password) {
+    mostrarToast("Por favor llena todos los campos", "error");
+    return;
+  }
+
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
 
   if (error) {
     mostrarToast("Error: " + error.message, "error");
   } else {
-    mostrarToast("Sesión iniciada.", "success");
+    mostrarToast("Sesión iniciada correctamente", "success");
     localStorage.setItem("token", data.session.access_token);
-
-    window.location.href = "dashboard.html";
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 1200);
   }
 }

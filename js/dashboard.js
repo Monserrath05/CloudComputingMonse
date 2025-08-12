@@ -2,43 +2,10 @@ const SUPABASE_URL = "https://gsdsldjactyltkxwbdiw.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZHNsZGphY3R5bHRreHdiZGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MDUxNTcsImV4cCI6MjA3MDA4MTE1N30.1hLGHX44ipgsJDIpOPHM3mU3CgvC86VdJtFLyYGtlR0";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let idEnEdicion = null; // Guarda ID para edición
+let idEnEdicion = null;
 
 const btnAgregarActualizar = document.getElementById("btnAgregarActualizar");
 btnAgregarActualizar.addEventListener("click", agregarOActualizarEstudiante);
-
-// Función para mostrar notificaciones tipo toast
-function showToast(message, type = "info", duration = 3000) {
-  const container = document.getElementById("toast-container");
-  if (!container) return;
-
-  const toast = document.createElement("div");
-  toast.textContent = message;
-  toast.className = `toast toast-${type}`;
-
-  toast.style.cssText = `
-    background-color: ${type === "success" ? "#27ae60" : type === "error" ? "#c0392b" : "#2980b9"};
-    color: white;
-    padding: 12px 20px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    font-weight: bold;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-  `;
-
-  container.appendChild(toast);
-
-  requestAnimationFrame(() => {
-    toast.style.opacity = 1;
-  });
-
-  setTimeout(() => {
-    toast.style.opacity = 0;
-    toast.addEventListener("transitionend", () => toast.remove());
-  }, duration);
-}
 
 async function agregarOActualizarEstudiante() {
   const nombre = document.getElementById("nombre").value.trim();
@@ -61,7 +28,6 @@ async function agregarOActualizarEstudiante() {
   }
 
   if (idEnEdicion) {
-    // Actualizar estudiante
     const { error } = await client
       .from("estudiantes")
       .update({ nombre, correo, clase })
@@ -70,7 +36,7 @@ async function agregarOActualizarEstudiante() {
     if (error) {
       showToast("Error al actualizar: " + error.message, "error");
     } else {
-      showToast("Estudiante actualizado", "success");
+      showToast("Estudiante actualizado.", "success");
       idEnEdicion = null;
       btnAgregarActualizar.textContent = "Agregar";
       limpiarFormulario();
@@ -78,7 +44,6 @@ async function agregarOActualizarEstudiante() {
       cargarEstudiantesSelect();
     }
   } else {
-    // Agregar estudiante
     const { error } = await client.from("estudiantes").insert({
       nombre,
       correo,
@@ -89,7 +54,7 @@ async function agregarOActualizarEstudiante() {
     if (error) {
       showToast("Error al agregar: " + error.message, "error");
     } else {
-      showToast("Estudiante agregado", "success");
+      showToast("Estudiante agregado.", "success");
       limpiarFormulario();
       cargarEstudiantes();
       cargarEstudiantesSelect();
@@ -122,7 +87,9 @@ async function cargarEstudiantes() {
     item.innerHTML = `
       ${est.nombre} (${est.clase})
       <div>
-        <button onclick="editarEstudiante('${est.id}', '${escapeHTML(est.nombre)}', '${escapeHTML(est.correo)}', '${escapeHTML(est.clase)}')">✏</button>
+        <button onclick="editarEstudiante('${est.id}', '${escapeHTML(
+      est.nombre
+    )}', '${escapeHTML(est.correo)}', '${escapeHTML(est.clase)}')">✏</button>
         <button onclick="eliminarEstudiante('${est.id}')">🗑</button>
       </div>
     `;
@@ -130,7 +97,6 @@ async function cargarEstudiantes() {
   });
 }
 
-// Para evitar inyección, escapa texto que se va a insertar en el HTML
 function escapeHTML(text) {
   return text.replace(/'/g, "\\'").replace(/"/g, "&quot;");
 }
@@ -151,7 +117,7 @@ async function eliminarEstudiante(id) {
   if (error) {
     showToast("Error al eliminar: " + error.message, "error");
   } else {
-    showToast("Estudiante eliminado", "success");
+    showToast("Estudiante eliminado.", "success");
     cargarEstudiantes();
     cargarEstudiantesSelect();
   }
@@ -216,6 +182,7 @@ async function subirArchivo() {
     showToast("Error al subir: " + error.message, "error");
   } else {
     showToast("Archivo subido correctamente.", "success");
+    archivoInput.value = "";
     listarArchivos();
   }
 }
@@ -231,9 +198,9 @@ async function listarArchivos() {
     return;
   }
 
-  const { data: archivos, error: listarError } = await client.storage
+  const { data: items, error: listarError } = await client.storage
     .from("tareas")
-    .list(user.id, { limit: 20 });
+    .list(user.id, { limit: 100, offset: 0 });
 
   const lista = document.getElementById("lista-archivos");
   lista.innerHTML = "";
@@ -243,10 +210,15 @@ async function listarArchivos() {
     return;
   }
 
+  // Filtramos solo archivos (type === 'file')
+  const archivos = items.filter((item) => item.type === "file");
+
   for (const archivo of archivos) {
+    const pathCompleto = `${user.id}/${archivo.name}`;
+
     const { data: signedUrlData, error: signedUrlError } = await client.storage
       .from("tareas")
-      .createSignedUrl(`${user.id}/${archivo.name}`, 60);
+      .createSignedUrl(pathCompleto, 60);
 
     if (signedUrlError) {
       console.error("Error al generar URL firmada:", signedUrlError.message);
@@ -287,11 +259,31 @@ async function cerrarSesion() {
   } else {
     localStorage.removeItem("token");
     showToast("Sesión cerrada.", "success");
-    window.location.href = "index.html";
+    setTimeout(() => {
+      window.location.href = "index.html";
+    }, 1000);
   }
 }
 
+// Función para mostrar notificaciones tipo toast sin alert
+function showToast(message, type = "info") {
+  const toastContainer = document.getElementById("toast-container");
+  if (!toastContainer) return;
+
+  const toast = document.createElement("div");
+  toast.textContent = message;
+  toast.className = `toast ${type}`;
+
+  toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3500);
+}
+
 // Al cargar la página
-cargarEstudiantes();
-cargarEstudiantesSelect();
-listarArchivos();
+document.addEventListener("DOMContentLoaded", () => {
+  cargarEstudiantes();
+  cargarEstudiantesSelect();
+  listarArchivos();
+});

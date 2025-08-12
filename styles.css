@@ -149,4 +149,43 @@ img {
   overflow-y: auto;
   padding-right: 10px; /* Para que no se superponga el scroll */
 }
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.toast {
+  padding: 12px 20px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 0 8px rgba(0,0,0,0.2);
+  opacity: 0.95;
+  animation: fadein 0.3s, fadeout 0.3s 3s;
+}
+
+.toast.info {
+  background-color: #3498db;
+}
+
+.toast.success {
+  background-color: #2ecc71;
+}
+
+.toast.error {
+  background-color: #e74c3c;
+}
+
+@keyframes fadein {
+  from { opacity: 0; right: 0; }
+  to { opacity: 0.95; right: 20px; }
+}
+
+@keyframes fadeout {
+  from { opacity: 0.95; right: 20px; }
+  to { opacity: 0; right: 0; }
+}
 
