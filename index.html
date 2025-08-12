@@ -3,13 +3,127 @@
 <head>
   <meta charset="UTF-8" />
   <title>Mi Clase en la Nube - Login</title>
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Reset básico */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #121212;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      font-weight: 700;
+      font-size: 2.5rem;
+      text-align: center;
+      color: #1abc9c;
+      text-shadow: 0 0 8px #1abc9c;
+    }
+
+    #auth-container {
+      background: #1e1e1e;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(26, 188, 156, 0.7);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #1abc9c;
+      text-align: center;
+      font-weight: 600;
+      text-shadow: 0 0 6px #16a085;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 20px;
+      border: none;
+      border-radius: 8px;
+      background: #2c2c2c;
+      color: #eee;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      background: #34495e;
+      outline: none;
+      box-shadow: 0 0 6px #1abc9c;
+      color: #fff;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #1abc9c;
+      border: none;
+      border-radius: 8px;
+      color: #121212;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 0 8px #1abc9c;
+    }
+
+    button:hover {
+      background-color: #16a085;
+      box-shadow: 0 0 15px #16a085;
+      color: #fff;
+    }
+
+    p {
+      margin-top: 15px;
+      text-align: center;
+      color: #bbb;
+      font-size: 0.9rem;
+    }
+
+    p a {
+      color: #1abc9c;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    p a:hover {
+      color: #16a085;
+      text-decoration: underline;
+    }
+
+    /* Contenedor para notificaciones tipo toast */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+
+    /* Toasts estilos se manejan en JS */
+  </style>
 </head>
 <body>
   <h1>Bienvenida a Mi Clase en la Nube</h1>
 
   <div id="auth-container">
-  
     <div id="login-form">
       <h2>Iniciar Sesión</h2>
       <input type="email" id="email" placeholder="Correo" />
@@ -27,8 +141,7 @@
     </div>
   </div>
 
-  <!-- Contenedor para notificaciones tipo toast -->
-  <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+  <div id="toast-container"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
