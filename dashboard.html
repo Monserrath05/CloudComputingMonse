@@ -20,12 +20,12 @@
       <button id="btnAgregarActualizar">Agregar</button>
     </section>
 
-    <section class="card">
+    <section class="card lista-estudiantes-section">
       <h2>Lista de estudiantes</h2>
       <ul id="lista-estudiantes" class="lista-estudiantes"></ul>
     </section>
 
-    <section class="card">
+    <section class="card" id="subir-archivo-section">
       <h2>Subir archivo</h2>
       <label for="estudiante">Selecciona un estudiante:</label>
       <select id="estudiante"></select><br /><br />
@@ -34,16 +34,12 @@
       <button onclick="subirArchivo()">Subir</button>
     </section>
 
-    <section class="card">
+    <section class="card" id="archivos-subidos-section">
       <h2>Archivos subidos</h2>
       <ul id="lista-archivos"></ul>
     </section>
 
   </div>
-
-  <!-- Contenedor para las notificaciones tipo toast -->
-  <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
-
   <script src="js/dashboard.js"></script>
 </body>
 </html>

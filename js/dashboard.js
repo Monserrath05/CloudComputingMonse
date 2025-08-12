@@ -2,68 +2,96 @@ const SUPABASE_URL = "https://gsdsldjactyltkxwbdiw.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZHNsZGphY3R5bHRreHdiZGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MDUxNTcsImV4cCI6MjA3MDA4MTE1N30.1hLGHX44ipgsJDIpOPHM3mU3CgvC86VdJtFLyYGtlR0";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let idEnEdicion = null; // Guarda ID para edición
 
-let idEnEdicion = null; // ID para editar estudiante
+const btnAgregarActualizar = document.getElementById("btnAgregarActualizar");
+btnAgregarActualizar.addEventListener("click", agregarOActualizarEstudiante);
 
-// Toasts para notificaciones no bloqueantes
-function toast(mensaje, tipo = "info") {
-  const toastContainer = document.getElementById("toast-container");
-  if (!toastContainer) return;
+async function agregarOActualizarEstudiante() {
+  const nombre = document.getElementById("nombre").value.trim();
+  const correo = document.getElementById("correo").value.trim();
+  const clase = document.getElementById("clase").value.trim();
 
-  const toast = document.createElement("div");
-  toast.className = `toast toast-${tipo}`;
-  toast.textContent = mensaje;
+  if (!nombre || !correo || !clase) {
+    mostrarToast("Por favor completa todos los campos.", "error");
+    return;
+  }
 
-  toastContainer.appendChild(toast);
+  const {
+    data: { user },
+    error: userError,
+  } = await client.auth.getUser();
 
-  // Aparece y desaparece
-  setTimeout(() => {
-    toast.style.opacity = "0";
-    setTimeout(() => toast.remove(), 600);
-  }, 3000);
+  if (userError || !user) {
+    mostrarToast("No estás autenticado.", "error");
+    return;
+  }
+
+  if (idEnEdicion) {
+    // Actualizar estudiante
+    const { error } = await client
+      .from("estudiantes")
+      .update({ nombre, correo, clase })
+      .eq("id", idEnEdicion);
+
+    if (error) {
+      mostrarToast("Error al actualizar: " + error.message, "error");
+    } else {
+      mostrarToast("Estudiante actualizado correctamente.", "success");
+      idEnEdicion = null;
+      btnAgregarActualizar.textContent = "Agregar";
+      limpiarFormulario();
+      cargarEstudiantes();
+      cargarEstudiantesSelect();
+    }
+  } else {
+    // Agregar estudiante
+    const { error } = await client.from("estudiantes").insert({
+      nombre,
+      correo,
+      clase,
+      user_id: user.id,
+    });
+
+    if (error) {
+      mostrarToast("Error al agregar: " + error.message, "error");
+    } else {
+      mostrarToast("Estudiante agregado correctamente.", "success");
+      limpiarFormulario();
+      cargarEstudiantes();
+      cargarEstudiantesSelect();
+    }
+  }
 }
 
-// Escapar texto para evitar inyección
-function escapeHTML(text) {
-  return text.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-}
-
-// Limpiar formulario estudiante
 function limpiarFormulario() {
   document.getElementById("nombre").value = "";
   document.getElementById("correo").value = "";
   document.getElementById("clase").value = "";
-  idEnEdicion = null;
-  btnAgregarActualizar.textContent = "Agregar";
 }
 
-// Cargar lista de estudiantes y mostrarlos
 async function cargarEstudiantes() {
   const { data, error } = await client
     .from("estudiantes")
     .select("*")
     .order("created_at", { ascending: false });
 
+  if (error) {
+    mostrarToast("Error al cargar estudiantes: " + error.message, "error");
+    return;
+  }
+
   const lista = document.getElementById("lista-estudiantes");
   lista.innerHTML = "";
 
-  if (error) {
-    toast("Error al cargar estudiantes: " + error.message, "error");
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    lista.innerHTML = "<li>No hay estudiantes registrados.</li>";
-    return;
-  }
-
   data.forEach((est) => {
     const item = document.createElement("li");
-    item.classList.add("lista-estudiantes-item");
     item.innerHTML = `
-      <span>${est.nombre} (${est.clase})</span>
+      ${est.nombre} (${est.clase})
       <div>
-        <button onclick="editarEstudiante('${est.id}', '${escapeHTML(est.nombre)}', '${escapeHTML(est.correo)}', '${escapeHTML(est.clase)}')">✏</button>
+        <button onclick="editarEstudiante('${est.id}', '${escapeHTML(
+      est.nombre
+    )}', '${escapeHTML(est.correo)}', '${escapeHTML(est.clase)}')">✏</button>
         <button onclick="eliminarEstudiante('${est.id}')">🗑</button>
       </div>
     `;
@@ -71,20 +99,46 @@ async function cargarEstudiantes() {
   });
 }
 
-// Cargar select de estudiantes para subir archivo
+// Para evitar inyección, escapa texto que se va a insertar en el HTML
+function escapeHTML(text) {
+  return text.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+}
+
+function editarEstudiante(id, nombre, correo, clase) {
+  document.getElementById("nombre").value = nombre;
+  document.getElementById("correo").value = correo;
+  document.getElementById("clase").value = clase;
+  idEnEdicion = id;
+  btnAgregarActualizar.textContent = "Actualizar";
+}
+
+async function eliminarEstudiante(id) {
+  if (!confirm("¿Seguro que quieres eliminar este estudiante?")) return;
+
+  const { error } = await client.from("estudiantes").delete().eq("id", id);
+
+  if (error) {
+    mostrarToast("Error al eliminar: " + error.message, "error");
+  } else {
+    mostrarToast("Estudiante eliminado correctamente.", "success");
+    cargarEstudiantes();
+    cargarEstudiantesSelect();
+  }
+}
+
 async function cargarEstudiantesSelect() {
   const { data, error } = await client
     .from("estudiantes")
     .select("id, nombre")
     .order("nombre", { ascending: true });
 
-  const select = document.getElementById("estudiante");
-  select.innerHTML = "";
-
   if (error) {
-    toast("Error al cargar estudiantes para selección: " + error.message, "error");
+    console.error("Error al cargar estudiantes para select:", error.message);
     return;
   }
+
+  const select = document.getElementById("estudiante");
+  select.innerHTML = "";
 
   data.forEach((est) => {
     const option = document.createElement("option");
@@ -94,93 +148,12 @@ async function cargarEstudiantesSelect() {
   });
 }
 
-// Agregar o actualizar estudiante
-async function agregarOActualizarEstudiante() {
-  const nombre = document.getElementById("nombre").value.trim();
-  const correo = document.getElementById("correo").value.trim();
-  const clase = document.getElementById("clase").value.trim();
-
-  if (!nombre || !correo || !clase) {
-    toast("Por favor completa todos los campos.", "error");
-    return;
-  }
-
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
-
-  if (userError || !user) {
-    toast("No estás autenticado.", "error");
-    return;
-  }
-
-  if (idEnEdicion) {
-    // Actualizar
-    const { error } = await client
-      .from("estudiantes")
-      .update({ nombre, correo, clase })
-      .eq("id", idEnEdicion);
-
-    if (error) {
-      toast("Error al actualizar: " + error.message, "error");
-    } else {
-      toast("Estudiante actualizado correctamente", "success");
-      limpiarFormulario();
-      cargarEstudiantes();
-      cargarEstudiantesSelect();
-    }
-  } else {
-    // Agregar nuevo
-    const { error } = await client.from("estudiantes").insert({
-      nombre,
-      correo,
-      clase,
-      user_id: user.id,
-    });
-
-    if (error) {
-      toast("Error al agregar: " + error.message, "error");
-    } else {
-      toast("Estudiante agregado correctamente", "success");
-      limpiarFormulario();
-      cargarEstudiantes();
-      cargarEstudiantesSelect();
-    }
-  }
-}
-
-// Preparar formulario para editar
-function editarEstudiante(id, nombre, correo, clase) {
-  document.getElementById("nombre").value = nombre;
-  document.getElementById("correo").value = correo;
-  document.getElementById("clase").value = clase;
-  idEnEdicion = id;
-  btnAgregarActualizar.textContent = "Actualizar";
-}
-
-// Eliminar estudiante
-async function eliminarEstudiante(id) {
-  if (!confirm("¿Seguro que quieres eliminar este estudiante?")) return;
-
-  const { error } = await client.from("estudiantes").delete().eq("id", id);
-
-  if (error) {
-    toast("Error al eliminar: " + error.message, "error");
-  } else {
-    toast("Estudiante eliminado", "success");
-    cargarEstudiantes();
-    cargarEstudiantesSelect();
-  }
-}
-
-// Subir archivo asociado a estudiante
 async function subirArchivo() {
   const archivoInput = document.getElementById("archivo");
   const archivo = archivoInput.files[0];
 
   if (!archivo) {
-    toast("Selecciona un archivo primero.", "error");
+    mostrarToast("Selecciona un archivo primero.", "error");
     return;
   }
 
@@ -190,13 +163,13 @@ async function subirArchivo() {
   } = await client.auth.getUser();
 
   if (userError || !user) {
-    toast("Sesión no válida.", "error");
+    mostrarToast("Sesión no válida.", "error");
     return;
   }
 
   const estudianteSeleccionado = document.getElementById("estudiante").value;
   if (!estudianteSeleccionado) {
-    toast("Selecciona un estudiante para subir el archivo.", "error");
+    mostrarToast("Selecciona un estudiante para subir el archivo.", "error");
     return;
   }
 
@@ -209,15 +182,14 @@ async function subirArchivo() {
     });
 
   if (error) {
-    toast("Error al subir archivo: " + error.message, "error");
+    mostrarToast("Error al subir: " + error.message, "error");
   } else {
-    toast("Archivo subido correctamente", "success");
-    archivoInput.value = ""; // Limpiar input
+    mostrarToast("Archivo subido correctamente.", "success");
+    archivoInput.value = ""; // limpiar input
     listarArchivos();
   }
 }
 
-// Listar archivos subidos del usuario
 async function listarArchivos() {
   const {
     data: { user },
@@ -225,25 +197,19 @@ async function listarArchivos() {
   } = await client.auth.getUser();
 
   if (userError || !user) {
-    toast("Sesión no válida.", "error");
+    mostrarToast("Sesión no válida.", "error");
     return;
   }
 
   const { data: archivos, error: listarError } = await client.storage
     .from("tareas")
-    .list(user.id, { limit: 100, offset: 0 });
+    .list(user.id, { limit: 50 });
 
   const lista = document.getElementById("lista-archivos");
   lista.innerHTML = "";
 
   if (listarError) {
     lista.innerHTML = "<li>Error al listar archivos</li>";
-    console.error("Error al listar archivos:", listarError.message);
-    return;
-  }
-
-  if (!archivos || archivos.length === 0) {
-    lista.innerHTML = "<li>No hay archivos subidos.</li>";
     return;
   }
 
@@ -260,65 +226,70 @@ async function listarArchivos() {
     const publicUrl = signedUrlData.signedUrl;
     const item = document.createElement("li");
 
-    if (/\.(jpg|jpeg|png|gif)$/i.test(archivo.name)) {
+    const esImagen = archivo.name.match(/\.(jpg|jpeg|png|gif)$/i);
+    const esPDF = archivo.name.match(/\.pdf$/i);
+
+    if (esImagen) {
       item.innerHTML = `
         <strong>${archivo.name}</strong><br>
-        <a href="${publicUrl}" target="_blank" rel="noopener noreferrer">
-          <img src="${publicUrl}" width="150" style="border:1px solid #ccc; margin:5px; border-radius:6px;" />
+        <a href="${publicUrl}" target="_blank">
+          <img src="${publicUrl}" alt="${archivo.name}" />
         </a>
       `;
-    } else if (/\.pdf$/i.test(archivo.name)) {
+    } else if (esPDF) {
       item.innerHTML = `
         <strong>${archivo.name}</strong><br>
-        <a href="${publicUrl}" target="_blank" rel="noopener noreferrer">Ver PDF</a>
+        <a href="${publicUrl}" target="_blank">Ver PDF</a>
       `;
     } else {
-      item.innerHTML = `<a href="${publicUrl}" target="_blank" rel="noopener noreferrer">${archivo.name}</a>`;
+      item.innerHTML = `<a href="${publicUrl}" target="_blank">${archivo.name}</a>`;
     }
 
     lista.appendChild(item);
   }
 }
 
-// Cerrar sesión
 async function cerrarSesion() {
   const { error } = await client.auth.signOut();
 
   if (error) {
-    toast("Error al cerrar sesión: " + error.message, "error");
+    mostrarToast("Error al cerrar sesión: " + error.message, "error");
   } else {
     localStorage.removeItem("token");
-    toast("Sesión cerrada.", "success");
+    mostrarToast("Sesión cerrada correctamente.", "success");
     setTimeout(() => {
       window.location.href = "index.html";
-    }, 1500);
+    }, 1000);
   }
 }
 
-// Botón agregar/actualizar
-const btnAgregarActualizar = document.getElementById("btnAgregarActualizar");
-btnAgregarActualizar.addEventListener("click", agregarOActualizarEstudiante);
+// Función para mostrar mensajes tipo toast sin alertas que bloquean la UI
+function mostrarToast(mensaje, tipo = "info") {
+  const toastContainer = document.getElementById("toast-container") || crearToastContainer();
+  const toast = document.createElement("div");
+  toast.textContent = mensaje;
+  toast.className = `toast toast-${tipo}`;
+  toastContainer.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, 3500);
+}
 
-// Inicialización al cargar página
+function crearToastContainer() {
+  const container = document.createElement("div");
+  container.id = "toast-container";
+  container.style.position = "fixed";
+  container.style.top = "20px";
+  container.style.right = "20px";
+  container.style.zIndex = "9999";
+  document.body.appendChild(container);
+  return container;
+}
+
+// Al cargar la página
 document.addEventListener("DOMContentLoaded", () => {
   cargarEstudiantes();
   cargarEstudiantesSelect();
   listarArchivos();
-  suscribirseCambios();
 });
-
-// Suscripción a cambios en la tabla estudiantes para actualización en tiempo real
-function suscribirseCambios() {
-  client
-    .channel("public:estudiantes")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "estudiantes" },
-      (payload) => {
-        cargarEstudiantes();
-        cargarEstudiantesSelect();
-        toast(`Datos actualizados: ${payload.event}`, "info");
-      }
-    )
-    .subscribe();
-}
