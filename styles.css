@@ -142,3 +142,11 @@ img {
   border-bottom: 1px solid #444;
   word-wrap: break-word;
 }
+
+.lista-estudiantes-section ul,
+#archivos-subidos-section ul {
+  max-height: 400px; /* Ajusta según necesites */
+  overflow-y: auto;
+  padding-right: 10px; /* Para que no se superponga el scroll */
+}
+

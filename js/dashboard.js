@@ -2,7 +2,7 @@ const SUPABASE_URL = "https://gsdsldjactyltkxwbdiw.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZHNsZGphY3R5bHRreHdiZGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MDUxNTcsImV4cCI6MjA3MDA4MTE1N30.1hLGHX44ipgsJDIpOPHM3mU3CgvC86VdJtFLyYGtlR0";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let idEnEdicion = null; // Guarda ID para edición
+let idEnEdicion = null;
 
 const btnAgregarActualizar = document.getElementById("btnAgregarActualizar");
 btnAgregarActualizar.addEventListener("click", agregarOActualizarEstudiante);
@@ -17,11 +17,7 @@ async function agregarOActualizarEstudiante() {
     return;
   }
 
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
-
+  const { data: { user }, error: userError } = await client.auth.getUser();
   if (userError || !user) {
     mostrarToast("No estás autenticado.", "error");
     return;
@@ -37,7 +33,7 @@ async function agregarOActualizarEstudiante() {
     if (error) {
       mostrarToast("Error al actualizar: " + error.message, "error");
     } else {
-      mostrarToast("Estudiante actualizado correctamente.", "success");
+      mostrarToast("Estudiante actualizado", "success");
       idEnEdicion = null;
       btnAgregarActualizar.textContent = "Agregar";
       limpiarFormulario();
@@ -56,7 +52,7 @@ async function agregarOActualizarEstudiante() {
     if (error) {
       mostrarToast("Error al agregar: " + error.message, "error");
     } else {
-      mostrarToast("Estudiante agregado correctamente.", "success");
+      mostrarToast("Estudiante agregado", "success");
       limpiarFormulario();
       cargarEstudiantes();
       cargarEstudiantesSelect();
@@ -89,9 +85,7 @@ async function cargarEstudiantes() {
     item.innerHTML = `
       ${est.nombre} (${est.clase})
       <div>
-        <button onclick="editarEstudiante('${est.id}', '${escapeHTML(
-      est.nombre
-    )}', '${escapeHTML(est.correo)}', '${escapeHTML(est.clase)}')">✏</button>
+        <button onclick="editarEstudiante('${est.id}', '${escapeHTML(est.nombre)}', '${escapeHTML(est.correo)}', '${escapeHTML(est.clase)}')">✏</button>
         <button onclick="eliminarEstudiante('${est.id}')">🗑</button>
       </div>
     `;
@@ -99,7 +93,6 @@ async function cargarEstudiantes() {
   });
 }
 
-// Para evitar inyección, escapa texto que se va a insertar en el HTML
 function escapeHTML(text) {
   return text.replace(/'/g, "\\'").replace(/"/g, "&quot;");
 }
@@ -120,7 +113,7 @@ async function eliminarEstudiante(id) {
   if (error) {
     mostrarToast("Error al eliminar: " + error.message, "error");
   } else {
-    mostrarToast("Estudiante eliminado correctamente.", "success");
+    mostrarToast("Estudiante eliminado", "success");
     cargarEstudiantes();
     cargarEstudiantesSelect();
   }
@@ -157,11 +150,7 @@ async function subirArchivo() {
     return;
   }
 
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
-
+  const { data: { user }, error: userError } = await client.auth.getUser();
   if (userError || !user) {
     mostrarToast("Sesión no válida.", "error");
     return;
@@ -174,7 +163,8 @@ async function subirArchivo() {
   }
 
   const nombreRuta = `${user.id}/${estudianteSeleccionado}/${archivo.name}`;
-  const { error } = await client.storage
+
+  const { data, error } = await client.storage
     .from("tareas")
     .upload(nombreRuta, archivo, {
       cacheControl: "3600",
@@ -182,20 +172,16 @@ async function subirArchivo() {
     });
 
   if (error) {
-    mostrarToast("Error al subir: " + error.message, "error");
+    mostrarToast("Error al subir archivo: " + error.message, "error");
   } else {
     mostrarToast("Archivo subido correctamente.", "success");
-    archivoInput.value = ""; // limpiar input
+    archivoInput.value = "";
     listarArchivos();
   }
 }
 
 async function listarArchivos() {
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
-
+  const { data: { user }, error: userError } = await client.auth.getUser();
   if (userError || !user) {
     mostrarToast("Sesión no válida.", "error");
     return;
@@ -233,7 +219,7 @@ async function listarArchivos() {
       item.innerHTML = `
         <strong>${archivo.name}</strong><br>
         <a href="${publicUrl}" target="_blank">
-          <img src="${publicUrl}" alt="${archivo.name}" />
+          <img src="${publicUrl}" width="150" style="border:1px solid #ccc; margin:5px;" />
         </a>
       `;
     } else if (esPDF) {
@@ -256,38 +242,48 @@ async function cerrarSesion() {
     mostrarToast("Error al cerrar sesión: " + error.message, "error");
   } else {
     localStorage.removeItem("token");
-    mostrarToast("Sesión cerrada correctamente.", "success");
+    mostrarToast("Sesión cerrada.", "success");
     setTimeout(() => {
       window.location.href = "index.html";
-    }, 1000);
+    }, 1500);
   }
 }
 
-// Función para mostrar mensajes tipo toast sin alertas que bloquean la UI
 function mostrarToast(mensaje, tipo = "info") {
-  const toastContainer = document.getElementById("toast-container") || crearToastContainer();
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
   const toast = document.createElement("div");
   toast.textContent = mensaje;
-  toast.className = `toast toast-${tipo}`;
-  toastContainer.appendChild(toast);
-  
+
+  toast.style.position = "relative";
+  toast.style.marginBottom = "10px";
+  toast.style.padding = "12px 20px";
+  toast.style.borderRadius = "8px";
+  toast.style.color = "#fff";
+  toast.style.fontWeight = "600";
+  toast.style.minWidth = "250px";
+  toast.style.boxShadow = "0 3px 8px rgba(0,0,0,0.3)";
+  toast.style.opacity = "1";
+  toast.style.transition = "opacity 0.5s ease";
+
+  if (tipo === "success") {
+    toast.style.backgroundColor = "#28a745";
+  } else if (tipo === "error") {
+    toast.style.backgroundColor = "#dc3545";
+  } else {
+    toast.style.backgroundColor = "#007bff";
+  }
+
+  container.appendChild(toast);
+
   setTimeout(() => {
-    toast.remove();
-  }, 3500);
+    toast.style.opacity = "0";
+    setTimeout(() => container.removeChild(toast), 500);
+  }, 3000);
 }
 
-function crearToastContainer() {
-  const container = document.createElement("div");
-  container.id = "toast-container";
-  container.style.position = "fixed";
-  container.style.top = "20px";
-  container.style.right = "20px";
-  container.style.zIndex = "9999";
-  document.body.appendChild(container);
-  return container;
-}
-
-// Al cargar la página
+// Cargar datos iniciales y suscripción
 document.addEventListener("DOMContentLoaded", () => {
   cargarEstudiantes();
   cargarEstudiantesSelect();
