@@ -1,5 +1,5 @@
 body {
-  background-color: #f9f9f9;
+  background: linear-gradient(135deg, #f0f4f8, #d9e4f5);
   font-family: 'Segoe UI', sans-serif;
   display: flex;
   justify-content: center;
@@ -10,55 +10,73 @@ body {
 .contenedor {
   background-color: white;
   padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
   width: 100%;
   max-width: 600px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.contenedor:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
 }
 
 h1, h2 {
-  color: #333;
+  color: #2c3e50;
   margin-top: 20px;
   text-align: center;
+  font-weight: 600;
 }
 
 form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
 input, select {
-  padding: 10px;
+  padding: 12px;
   font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  border: 1px solid #ccd6dd;
+  border-radius: 10px;
+  background-color: #fdfdfd;
+  transition: border 0.3s, box-shadow 0.3s;
+}
+
+input:focus, select:focus {
+  border-color: #1f8ef1;
+  box-shadow: 0 0 8px rgba(31,142,241,0.2);
+  outline: none;
 }
 
 button {
-  padding: 10px 15px;
-  background-color: #1f8ef1;
+  padding: 12px 15px;
+  background: linear-gradient(90deg, #1f8ef1, #0c71c3);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: bold;
-  margin-top: 10px;
+  letter-spacing: 0.5px;
+  transition: background 0.3s ease, transform 0.2s ease;
 }
 
 button:hover {
-  background-color: #0c71c3;
+  background: linear-gradient(90deg, #0c71c3, #095fa3);
+  transform: translateY(-2px);
 }
 
 .cerrar-btn {
-  background-color: #e74c3c;
+  background: linear-gradient(90deg, #e74c3c, #c0392b);
   display: block;
-  width: 30%;
+  width: 40%;
+  margin: 0 auto;
 }
 
-.cerrar:hover {
-  background-color: #c0392b;
+.cerrar-btn:hover {
+  background: linear-gradient(90deg, #c0392b, #992d22);
 }
 
 ul {
@@ -68,13 +86,44 @@ ul {
 
 ul li {
   margin: 10px 0;
-  padding: 8px;
-  background-color: #f3f3f3;
-  border-radius: 6px;
+  padding: 10px;
+  background-color: #f6f9fc;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 img {
   display: block;
-  margin-top: 5px;
-  border-radius: 6px;
+  margin-top: 8px;
+  border-radius: 8px;
+  max-width: 100%;
 }
+button {
+  margin: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+button[onclick^="eliminar"] {
+  background-color: #e74c3c;
+  color: white;
+}
+
+button[onclick^="editar"] {
+  background-color: #f39c12;
+  color: white;
+}
+
+.cerrar-btn {
+  background-color: #c0392b;
+  color: white;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+

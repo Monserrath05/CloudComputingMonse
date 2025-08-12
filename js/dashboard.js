@@ -1,9 +1,9 @@
-// Conexión a Supabase (usar la misma anon key que en auth.js)
+// Conexión a Supabase
 const SUPABASE_URL = "https://gsdsldjactyltkxwbdiw.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZHNsZGphY3R5bHRreHdiZGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MDUxNTcsImV4cCI6MjA3MDA4MTE1N30.1hLGHX44ipgsJDIpOPHM3mU3CgvC86VdJtFLyYGtlR0";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ✅ Verificar sesión al cargar el dashboard
+// ✅ Verificar sesión al cargar
 async function verificarSesion() {
   const { data: { session }, error } = await client.auth.getSession();
   if (error || !session) {
@@ -12,7 +12,6 @@ async function verificarSesion() {
     return;
   }
   console.log("Sesión activa:", session.user.email);
-  // Cargar datos solo si hay sesión
   cargarEstudiantes();
   listarArchivos();
 }
@@ -28,8 +27,8 @@ async function agregarEstudiante() {
     return;
   }
 
-  const { data: { user }, error: userError } = await client.auth.getUser();
-  if (userError || !user) {
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
     alert("No estás autenticado.");
     return;
   }
@@ -46,7 +45,7 @@ async function agregarEstudiante() {
   }
 }
 
-// 📌 Cargar lista de estudiantes
+// 📌 Cargar estudiantes
 async function cargarEstudiantes() {
   const { data, error } = await client
     .from("estudiantes")
@@ -65,7 +64,11 @@ async function cargarEstudiantes() {
 
   data.forEach(est => {
     const item = document.createElement("li");
-    item.textContent = `${est.nombre} (${est.clase})`;
+    item.innerHTML = `
+      ${est.nombre} (${est.clase})
+      <button onclick="editarEstudiante(${est.id}, '${est.nombre}', '${est.correo}', '${est.clase}')">✏️</button>
+      <button onclick="eliminarEstudiante(${est.id})">🗑️</button>
+    `;
     lista.appendChild(item);
 
     const option = document.createElement("option");
@@ -73,6 +76,44 @@ async function cargarEstudiantes() {
     option.textContent = est.nombre;
     select.appendChild(option);
   });
+}
+
+// 📌 Editar estudiante
+async function editarEstudiante(id, nombreActual, correoActual, claseActual) {
+  const nuevoNombre = prompt("Nuevo nombre:", nombreActual);
+  const nuevoCorreo = prompt("Nuevo correo:", correoActual);
+  const nuevaClase = prompt("Nueva clase:", claseActual);
+
+  if (!nuevoNombre || !nuevoCorreo || !nuevaClase) {
+    alert("Todos los campos son obligatorios.");
+    return;
+  }
+
+  const { error } = await client
+    .from("estudiantes")
+    .update({ nombre: nuevoNombre, correo: nuevoCorreo, clase: nuevaClase })
+    .eq("id", id);
+
+  if (error) {
+    alert("Error al actualizar: " + error.message);
+  } else {
+    alert("Estudiante actualizado correctamente.");
+    cargarEstudiantes();
+  }
+}
+
+// 📌 Eliminar estudiante
+async function eliminarEstudiante(id) {
+  if (!confirm("¿Seguro que quieres eliminar este estudiante?")) return;
+
+  const { error } = await client.from("estudiantes").delete().eq("id", id);
+
+  if (error) {
+    alert("Error al eliminar: " + error.message);
+  } else {
+    alert("Estudiante eliminado correctamente.");
+    cargarEstudiantes();
+  }
 }
 
 // 📌 Subir archivo
@@ -86,8 +127,8 @@ async function subirArchivo() {
     return;
   }
 
-  const { data: { user }, error: userError } = await client.auth.getUser();
-  if (userError || !user) {
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
     alert("Sesión no válida.");
     return;
   }
@@ -105,35 +146,30 @@ async function subirArchivo() {
   }
 }
 
-// 📌 Listar archivos del usuario
+// 📌 Listar archivos
 async function listarArchivos() {
-  const { data: { user }, error: userError } = await client.auth.getUser();
-  if (userError || !user) {
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) {
     alert("Sesión no válida.");
     return;
   }
 
-  const { data: archivos, error: listarError } = await client.storage
+  const { data: archivos, error } = await client.storage
     .from("tareas")
     .list(user.id, { limit: 20 });
 
   const lista = document.getElementById("lista-archivos");
   lista.innerHTML = "";
 
-  if (listarError) {
+  if (error) {
     lista.innerHTML = "<li>Error al listar archivos</li>";
     return;
   }
 
   archivos.forEach(async archivo => {
-    const { data: signedUrlData, error: signedUrlError } = await client.storage
+    const { data: signedUrlData } = await client.storage
       .from("tareas")
       .createSignedUrl(`${user.id}/${archivo.name}`, 60);
-
-    if (signedUrlError) {
-      console.error("Error al generar URL:", signedUrlError.message);
-      return;
-    }
 
     const publicUrl = signedUrlData.signedUrl;
     const item = document.createElement("li");
@@ -141,19 +177,37 @@ async function listarArchivos() {
     const esPDF = archivo.name.match(/\.pdf$/i);
 
     if (esImagen) {
-      item.innerHTML = `<strong>${archivo.name}</strong><br>
+      item.innerHTML = `<strong>${archivo.name}</strong>
+        <button onclick="eliminarArchivo('${archivo.name}')">🗑️</button><br>
         <a href="${publicUrl}" target="_blank">
           <img src="${publicUrl}" width="150" style="border:1px solid #ccc; margin:5px;" />
         </a>`;
     } else if (esPDF) {
-      item.innerHTML = `<strong>${archivo.name}</strong><br>
+      item.innerHTML = `<strong>${archivo.name}</strong>
+        <button onclick="eliminarArchivo('${archivo.name}')">🗑️</button><br>
         <a href="${publicUrl}" target="_blank">Ver PDF</a>`;
     } else {
-      item.innerHTML = `<a href="${publicUrl}" target="_blank">${archivo.name}</a>`;
+      item.innerHTML = `<a href="${publicUrl}" target="_blank">${archivo.name}</a>
+        <button onclick="eliminarArchivo('${archivo.name}')">🗑️</button>`;
     }
 
     lista.appendChild(item);
   });
+}
+
+// 📌 Eliminar archivo
+async function eliminarArchivo(nombreArchivo) {
+  if (!confirm("¿Seguro que quieres eliminar este archivo?")) return;
+
+  const { data: { user } } = await client.auth.getUser();
+  const { error } = await client.storage.from("tareas").remove([`${user.id}/${nombreArchivo}`]);
+
+  if (error) {
+    alert("Error al eliminar archivo: " + error.message);
+  } else {
+    alert("Archivo eliminado correctamente.");
+    listarArchivos();
+  }
 }
 
 // 📌 Cerrar sesión
@@ -167,5 +221,5 @@ async function cerrarSesion() {
   }
 }
 
-// 🚀 Ejecutar verificación de sesión al iniciar
+// 🚀 Iniciar
 verificarSesion();
