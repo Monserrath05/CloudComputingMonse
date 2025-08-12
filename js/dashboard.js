@@ -2,11 +2,46 @@ const SUPABASE_URL = "https://gsdsldjactyltkxwbdiw.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZHNsZGphY3R5bHRreHdiZGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MDUxNTcsImV4cCI6MjA3MDA4MTE1N30.1hLGHX44ipgsJDIpOPHM3mU3CgvC86VdJtFLyYGtlR0";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-
 let idEnEdicion = null;
 
 const btnAgregarActualizar = document.getElementById("btnAgregarActualizar");
 btnAgregarActualizar.addEventListener("click", agregarOActualizarEstudiante);
+
+function mostrarToast(mensaje, tipo = "info", duracion = 3000) {
+  const contenedor = document.getElementById("toast-container");
+
+  const toast = document.createElement("div");
+  toast.textContent = mensaje;
+  toast.style.minWidth = "200px";
+  toast.style.marginBottom = "10px";
+  toast.style.padding = "10px 15px";
+  toast.style.borderRadius = "6px";
+  toast.style.color = "#fff";
+  toast.style.fontWeight = "bold";
+  toast.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+  toast.style.opacity = "1";
+  toast.style.transition = "opacity 0.5s ease";
+
+  switch (tipo) {
+    case "error":
+      toast.style.backgroundColor = "#e74c3c"; // rojo
+      break;
+    case "success":
+      toast.style.backgroundColor = "#27ae60"; // verde
+      break;
+    case "info":
+    default:
+      toast.style.backgroundColor = "#3498db"; // azul
+      break;
+  }
+
+  contenedor.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => contenedor.removeChild(toast), 500);
+  }, duracion);
+}
 
 async function agregarOActualizarEstudiante() {
   const nombre = document.getElementById("nombre").value.trim();
@@ -14,7 +49,7 @@ async function agregarOActualizarEstudiante() {
   const clase = document.getElementById("clase").value.trim();
 
   if (!nombre || !correo || !clase) {
-    alert("Por favor completa todos los campos.");
+    mostrarToast("Por favor completa todos los campos.", "error");
     return;
   }
 
@@ -24,7 +59,7 @@ async function agregarOActualizarEstudiante() {
   } = await client.auth.getUser();
 
   if (userError || !user) {
-    alert("No estás autenticado.");
+    mostrarToast("No estás autenticado.", "error");
     return;
   }
 
@@ -36,9 +71,9 @@ async function agregarOActualizarEstudiante() {
       .eq("id", idEnEdicion);
 
     if (error) {
-      alert("Error al actualizar: " + error.message);
+      mostrarToast("Error al actualizar: " + error.message, "error");
     } else {
-      alert("Estudiante actualizado");
+      mostrarToast("Estudiante actualizado", "success");
       idEnEdicion = null;
       btnAgregarActualizar.textContent = "Agregar";
       limpiarFormulario();
@@ -55,9 +90,9 @@ async function agregarOActualizarEstudiante() {
     });
 
     if (error) {
-      alert("Error al agregar: " + error.message);
+      mostrarToast("Error al agregar: " + error.message, "error");
     } else {
-      alert("Estudiante agregado");
+      mostrarToast("Estudiante agregado", "success");
       limpiarFormulario();
       cargarEstudiantes();
       cargarEstudiantesSelect();
@@ -81,7 +116,7 @@ async function cargarEstudiantes() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    alert("Error al cargar estudiantes: " + error.message);
+    mostrarToast("Error al cargar estudiantes: " + error.message, "error");
     return;
   }
 
@@ -122,9 +157,9 @@ async function eliminarEstudiante(id) {
   const { error } = await client.from("estudiantes").delete().eq("id", id);
 
   if (error) {
-    alert("Error al eliminar: " + error.message);
+    mostrarToast("Error al eliminar: " + error.message, "error");
   } else {
-    alert("Estudiante eliminado");
+    mostrarToast("Estudiante eliminado", "success");
     cargarEstudiantes();
     cargarEstudiantesSelect();
   }
@@ -157,7 +192,7 @@ async function subirArchivo() {
   const archivo = archivoInput.files[0];
 
   if (!archivo) {
-    alert("Selecciona un archivo primero.");
+    mostrarToast("Selecciona un archivo primero.", "error");
     return;
   }
 
@@ -167,13 +202,13 @@ async function subirArchivo() {
   } = await client.auth.getUser();
 
   if (userError || !user) {
-    alert("Sesión no válida.");
+    mostrarToast("Sesión no válida.", "error");
     return;
   }
 
   const estudianteSeleccionado = document.getElementById("estudiante").value;
   if (!estudianteSeleccionado) {
-    alert("Selecciona un estudiante para subir el archivo.");
+    mostrarToast("Selecciona un estudiante para subir el archivo.", "error");
     return;
   }
 
@@ -186,9 +221,9 @@ async function subirArchivo() {
     });
 
   if (error) {
-    alert("Error al subir: " + error.message);
+    mostrarToast("Error al subir: " + error.message, "error");
   } else {
-    alert("Archivo subido correctamente.");
+    mostrarToast("Archivo subido correctamente.", "success");
     listarArchivos();
   }
 }
@@ -200,7 +235,7 @@ async function listarArchivos() {
   } = await client.auth.getUser();
 
   if (userError || !user) {
-    alert("Sesión no válida.");
+    mostrarToast("Sesión no válida.", "error");
     return;
   }
 
@@ -257,10 +292,10 @@ async function cerrarSesion() {
   const { error } = await client.auth.signOut();
 
   if (error) {
-    alert("Error al cerrar sesión: " + error.message);
+    mostrarToast("Error al cerrar sesión: " + error.message, "error");
   } else {
     localStorage.removeItem("token");
-    alert("Sesión cerrada.");
+    mostrarToast("Sesión cerrada.", "info");
     window.location.href = "index.html";
   }
 }
