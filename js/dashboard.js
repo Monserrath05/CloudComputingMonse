@@ -56,7 +56,6 @@ async function agregarOActualizarEstudiante() {
   }
 }
 
-// Limpia formulario y reinicia estado edición
 function limpiarFormulario() {
   document.getElementById("nombre").value = "";
   document.getElementById("correo").value = "";
@@ -66,7 +65,6 @@ function limpiarFormulario() {
   document.querySelector("#form-estudiante h2").textContent = "Registrar estudiante";
 }
 
-// Carga estudiantes y actualiza UI
 async function cargarEstudiantes() {
   const { data, error } = await client
     .from("estudiantes")
@@ -94,7 +92,6 @@ async function cargarEstudiantes() {
   });
 }
 
-// Evita inyección en HTML
 function escapeHTML(text) {
   const div = document.createElement("div");
   div.textContent = text;
@@ -144,6 +141,107 @@ async function cargarEstudiantesSelect() {
   });
 }
 
+async function subirArchivo() {
+  const archivoInput = document.getElementById("archivo");
+  const archivo = archivoInput.files[0];
+
+  if (!archivo) {
+    alert("Selecciona un archivo primero.");
+    return;
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await client.auth.getUser();
+
+  if (userError || !user) {
+    alert("Sesión no válida.");
+    return;
+  }
+
+  const estudianteSeleccionado = document.getElementById("estudiante").value;
+  if (!estudianteSeleccionado) {
+    alert("Selecciona un estudiante para subir el archivo.");
+    return;
+  }
+
+  const nombreRuta = `${user.id}/${estudianteSeleccionado}/${archivo.name}`;
+  const { error } = await client.storage
+    .from("tareas")
+    .upload(nombreRuta, archivo, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+
+  if (error) {
+    alert("Error al subir: " + error.message);
+  } else {
+    alert("Archivo subido correctamente.");
+    listarArchivos();
+  }
+}
+
+async function listarArchivos() {
+  const {
+    data: { user },
+    error: userError,
+  } = await client.auth.getUser();
+
+  if (userError || !user) {
+    alert("Sesión no válida.");
+    return;
+  }
+
+  const { data: archivos, error: listarError } = await client.storage
+    .from("tareas")
+    .list(user.id, { limit: 20 });
+
+  const lista = document.getElementById("lista-archivos");
+  lista.innerHTML = "";
+
+  if (listarError) {
+    lista.innerHTML = "<li>Error al listar archivos</li>";
+    return;
+  }
+
+  archivos.forEach(async (archivo) => {
+    const { data: signedUrlData, error: signedUrlError } =
+      await client.storage
+        .from("tareas")
+        .createSignedUrl(`${user.id}/${archivo.name}`, 60);
+
+    if (signedUrlError) {
+      console.error("Error al generar URL firmada:", signedUrlError.message);
+      return;
+    }
+
+    const publicUrl = signedUrlData.signedUrl;
+    const item = document.createElement("li");
+
+    const esImagen = archivo.name.match(/\.(jpg|jpeg|png|gif)$/i);
+    const esPDF = archivo.name.match(/\.pdf$/i);
+
+    if (esImagen) {
+      item.innerHTML = `
+        <strong>${archivo.name}</strong><br>
+        <a href="${publicUrl}" target="_blank">
+          <img src="${publicUrl}" width="150" style="border:1px solid #ccc; margin:5px;" />
+        </a>
+      `;
+    } else if (esPDF) {
+      item.innerHTML = `
+        <strong>${archivo.name}</strong><br>
+        <a href="${publicUrl}" target="_blank">Ver PDF</a>
+      `;
+    } else {
+      item.innerHTML = `<a href="${publicUrl}" target="_blank">${archivo.name}</a>`;
+    }
+
+    lista.appendChild(item);
+  });
+}
+
 async function cerrarSesion() {
   const { error } = await client.auth.signOut();
 
@@ -156,31 +254,29 @@ async function cerrarSesion() {
   }
 }
 
-// ** SUSCRIPCIÓN EN TIEMPO REAL para actualizar lista automáticamente **
+// Suscripción en tiempo real compatible con Supabase JS v2
 function suscribirseCambios() {
-  client
-    .from('estudiantes')
-    .on('INSERT', payload => {
-      console.log('Estudiante agregado:', payload.new);
-      cargarEstudiantes();
-      cargarEstudiantesSelect();
-    })
-    .on('UPDATE', payload => {
-      console.log('Estudiante actualizado:', payload.new);
-      cargarEstudiantes();
-      cargarEstudiantesSelect();
-    })
-    .on('DELETE', payload => {
-      console.log('Estudiante eliminado:', payload.old);
-      cargarEstudiantes();
-      cargarEstudiantesSelect();
-    })
+  const canal = client
+    .channel('public:estudiantes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'estudiantes' },
+      (payload) => {
+        console.log(`Cambio detectado: `, payload);
+        cargarEstudiantes();
+        cargarEstudiantesSelect();
+      }
+    )
     .subscribe();
+
+  window.addEventListener('beforeunload', () => {
+    client.removeChannel(canal);
+  });
 }
 
-// Inicialización al cargar página
 document.addEventListener("DOMContentLoaded", () => {
   cargarEstudiantes();
   cargarEstudiantesSelect();
+  listarArchivos();
   suscribirseCambios();
 });

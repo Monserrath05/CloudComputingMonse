@@ -99,3 +99,9 @@ button:hover {
 .lista-estudiantes button:hover {
   background: #0c71c3;
 }
+
+img {
+  display: block;
+  margin-top: 5px;
+  border-radius: 6px;
+}
