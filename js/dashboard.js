@@ -2,6 +2,7 @@ const SUPABASE_URL = "https://gsdsldjactyltkxwbdiw.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZHNsZGphY3R5bHRreHdiZGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MDUxNTcsImV4cCI6MjA3MDA4MTE1N30.1hLGHX44ipgsJDIpOPHM3mU3CgvC86VdJtFLyYGtlR0";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+
 let idEnEdicion = null;
 
 const btnAgregarActualizar = document.getElementById("btnAgregarActualizar");
@@ -28,6 +29,7 @@ async function agregarOActualizarEstudiante() {
   }
 
   if (idEnEdicion) {
+    // Actualizar estudiante
     const { error } = await client
       .from("estudiantes")
       .update({ nombre, correo, clase })
@@ -37,9 +39,14 @@ async function agregarOActualizarEstudiante() {
       alert("Error al actualizar: " + error.message);
     } else {
       alert("Estudiante actualizado");
+      idEnEdicion = null;
+      btnAgregarActualizar.textContent = "Agregar";
       limpiarFormulario();
+      cargarEstudiantes();
+      cargarEstudiantesSelect();
     }
   } else {
+    // Agregar estudiante
     const { error } = await client.from("estudiantes").insert({
       nombre,
       correo,
@@ -52,6 +59,8 @@ async function agregarOActualizarEstudiante() {
     } else {
       alert("Estudiante agregado");
       limpiarFormulario();
+      cargarEstudiantes();
+      cargarEstudiantesSelect();
     }
   }
 }
@@ -116,6 +125,8 @@ async function eliminarEstudiante(id) {
     alert("Error al eliminar: " + error.message);
   } else {
     alert("Estudiante eliminado");
+    cargarEstudiantes();
+    cargarEstudiantesSelect();
   }
 }
 
