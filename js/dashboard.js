@@ -3,9 +3,14 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
-let idEnEdicion = null;
+let idEnEdicion = null; // ID para editar
 
+// Elementos
 const btnAgregarActualizar = document.getElementById("btnAgregarActualizar");
+const listaEstudiantes = document.getElementById("lista-estudiantes");
+const selectEstudiante = document.getElementById("estudiante");
+const listaArchivos = document.getElementById("lista-archivos");
+
 btnAgregarActualizar.addEventListener("click", agregarOActualizarEstudiante);
 
 async function agregarOActualizarEstudiante() {
@@ -18,11 +23,7 @@ async function agregarOActualizarEstudiante() {
     return;
   }
 
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
-
+  const { data: { user }, error: userError } = await client.auth.getUser();
   if (userError || !user) {
     alert("No estás autenticado.");
     return;
@@ -33,7 +34,6 @@ async function agregarOActualizarEstudiante() {
       .from("estudiantes")
       .update({ nombre, correo, clase })
       .eq("id", idEnEdicion);
-
     if (error) {
       alert("Error al actualizar: " + error.message);
     } else {
@@ -51,7 +51,6 @@ async function agregarOActualizarEstudiante() {
       clase,
       user_id: user.id,
     });
-
     if (error) {
       alert("Error al agregar: " + error.message);
     } else {
@@ -80,24 +79,22 @@ async function cargarEstudiantes() {
     return;
   }
 
-  const lista = document.getElementById("lista-estudiantes");
-  lista.innerHTML = "";
+  listaEstudiantes.innerHTML = "";
 
   data.forEach((est) => {
     const item = document.createElement("li");
     item.innerHTML = `
       ${est.nombre} (${est.clase})
       <div>
-        <button onclick="editarEstudiante('${est.id}', '${escapeQuotes(est.nombre)}', '${escapeQuotes(est.correo)}', '${escapeQuotes(est.clase)}')">✏</button>
+        <button onclick="editarEstudiante('${est.id}', '${escapeHTML(est.nombre)}', '${escapeHTML(est.correo)}', '${escapeHTML(est.clase)}')">✏</button>
         <button onclick="eliminarEstudiante('${est.id}')">🗑</button>
       </div>
     `;
-    lista.appendChild(item);
+    listaEstudiantes.appendChild(item);
   });
 }
 
-// Función simple para escapar comillas en strings para insertar en atributos onclick
-function escapeQuotes(text) {
+function escapeHTML(text) {
   return text.replace(/'/g, "\\'").replace(/"/g, "&quot;");
 }
 
@@ -134,14 +131,13 @@ async function cargarEstudiantesSelect() {
     return;
   }
 
-  const select = document.getElementById("estudiante");
-  select.innerHTML = "";
+  selectEstudiante.innerHTML = `<option value="">Selecciona un estudiante</option>`;
 
   data.forEach((est) => {
     const option = document.createElement("option");
     option.value = est.id;
     option.textContent = est.nombre;
-    select.appendChild(option);
+    selectEstudiante.appendChild(option);
   });
 }
 
@@ -154,23 +150,20 @@ async function subirArchivo() {
     return;
   }
 
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
-
+  const { data: { user }, error: userError } = await client.auth.getUser();
   if (userError || !user) {
     alert("Sesión no válida.");
     return;
   }
 
-  const estudianteSeleccionado = document.getElementById("estudiante").value;
+  const estudianteSeleccionado = selectEstudiante.value;
   if (!estudianteSeleccionado) {
     alert("Selecciona un estudiante para subir el archivo.");
     return;
   }
 
-  const nombreRuta = `${user.id}/${estudianteSeleccionado}/${archivo.name}`;
+  const nombreRuta = `${user.id}/${estudianteSeleccionado}/${Date.now()}_${archivo.name}`;
+
   const { error } = await client.storage.from("tareas").upload(nombreRuta, archivo, {
     cacheControl: "3600",
     upsert: false,
@@ -180,36 +173,39 @@ async function subirArchivo() {
     alert("Error al subir: " + error.message);
   } else {
     alert("Archivo subido correctamente.");
-    listarArchivos();
+    archivoInput.value = "";
+    listarArchivosPorEstudiante(estudianteSeleccionado);
   }
 }
 
-async function listarArchivos() {
-  const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
-
+async function listarArchivosPorEstudiante(estudianteId) {
+  const { data: { user }, error: userError } = await client.auth.getUser();
   if (userError || !user) {
     alert("Sesión no válida.");
     return;
   }
 
-  const { data: archivos, error: listarError } = await client.storage.from("tareas").list(`${user.id}`, { limit: 20 });
+  listaArchivos.innerHTML = "";
 
-  const lista = document.getElementById("lista-archivos");
-  lista.innerHTML = "";
+  const carpeta = `${user.id}/${estudianteId}`;
+  const { data: archivos, error: listarError } = await client.storage.from("tareas").list(carpeta);
 
   if (listarError) {
-    lista.innerHTML = "<li>Error al listar archivos</li>";
+    listaArchivos.innerHTML = "<li>Error al listar archivos</li>";
+    return;
+  }
+
+  if (archivos.length === 0) {
+    listaArchivos.innerHTML = "<li>No hay archivos para este estudiante.</li>";
     return;
   }
 
   for (const archivo of archivos) {
-    const { data: signedUrlData, error: signedUrlError } = await client.storage.from("tareas").createSignedUrl(`${user.id}/${archivo.name}`, 60);
+    const rutaArchivo = `${carpeta}/${archivo.name}`;
+    const { data: signedUrlData, error: signedUrlError } = await client.storage.from("tareas").createSignedUrl(rutaArchivo, 60);
 
     if (signedUrlError) {
-      console.error("Error al generar URL firmada:", signedUrlError.message);
+      console.error("Error al generar URL firmada para", rutaArchivo, ":", signedUrlError.message);
       continue;
     }
 
@@ -235,9 +231,19 @@ async function listarArchivos() {
       item.innerHTML = `<a href="${publicUrl}" target="_blank">${archivo.name}</a>`;
     }
 
-    lista.appendChild(item);
+    listaArchivos.appendChild(item);
   }
 }
+
+// Cuando cambies de estudiante en el select, listar sus archivos
+selectEstudiante.addEventListener("change", (e) => {
+  const estudianteId = e.target.value;
+  if (estudianteId) {
+    listarArchivosPorEstudiante(estudianteId);
+  } else {
+    listaArchivos.innerHTML = "";
+  }
+});
 
 async function cerrarSesion() {
   const { error } = await client.auth.signOut();
@@ -252,6 +258,7 @@ async function cerrarSesion() {
 }
 
 // Al cargar la página
-cargarEstudiantes();
-cargarEstudiantesSelect();
-listarArchivos();
+document.addEventListener("DOMContentLoaded", () => {
+  cargarEstudiantes();
+  cargarEstudiantesSelect();
+});
