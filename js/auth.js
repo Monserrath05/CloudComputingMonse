@@ -2,6 +2,7 @@ const SUPABASE_URL = "https://gsdsldjactyltkxwbdiw.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzZHNsZGphY3R5bHRreHdiZGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MDUxNTcsImV4cCI6MjA3MDA4MTE1N30.1hLGHX44ipgsJDIpOPHM3mU3CgvC86VdJtFLyYGtlR0";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+
 function toggleForms() {
   const loginForm = document.getElementById("login-form");
   const registerForm = document.getElementById("register-form");
@@ -41,7 +42,6 @@ async function login() {
   } else {
     alert("Sesión iniciada.");
     localStorage.setItem("token", data.session.access_token);
-
-     window.location.href = "dashboard.html"; //Registro Estudiantes
+    window.location.href = "dashboard.html";
   }
 }

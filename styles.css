@@ -7,7 +7,7 @@ body {
   margin: 0;
 }
 
-.contenedor {
+.container {
   background-color: white;
   padding: 30px;
   border-radius: 12px;
@@ -22,18 +22,14 @@ h1, h2 {
   text-align: center;
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
 input, select {
   padding: 10px;
   font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 10px;
 }
 
 button {
@@ -45,6 +41,8 @@ button {
   cursor: pointer;
   font-weight: bold;
   margin-top: 10px;
+  width: 100%;
+  transition: background-color 0.3s;
 }
 
 button:hover {
@@ -54,27 +52,50 @@ button:hover {
 .cerrar-btn {
   background-color: #e74c3c;
   display: block;
-  width: 30%;
+  width: 100px;
+  color: white;
+  border-radius: 8px;
+  padding: 10px;
+  margin: 0 auto 20px auto;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
 }
 
-.cerrar:hover {
+.cerrar-btn:hover {
   background-color: #c0392b;
 }
 
-ul {
+.lista-estudiantes {
   list-style: none;
   padding-left: 0;
 }
 
-ul li {
+.lista-estudiantes li {
   margin: 10px 0;
   padding: 8px;
   background-color: #f3f3f3;
   border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-img {
-  display: block;
-  margin-top: 5px;
-  border-radius: 6px;
+.lista-estudiantes div {
+  display: inline-block;
+  margin-left: 10px;
+}
+
+.lista-estudiantes button {
+  background: #1f8ef1;
+  border: none;
+  padding: 5px 8px;
+  margin-left: 5px;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+}
+
+.lista-estudiantes button:hover {
+  background: #0c71c3;
 }
