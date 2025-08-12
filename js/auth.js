@@ -3,11 +3,8 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function toggleForms() {
-  const loginForm = document.getElementById("login-form");
-  const registerForm = document.getElementById("register-form");
-
-  loginForm.style.display = loginForm.style.display === "none" ? "block" : "none";
-  registerForm.style.display = registerForm.style.display === "none" ? "block" : "none";
+  document.getElementById("login-form").classList.toggle("hidden");
+  document.getElementById("register-form").classList.toggle("hidden");
 }
 
 async function register() {
@@ -15,19 +12,16 @@ async function register() {
   const password = document.getElementById("reg-password").value;
 
   if (!email || !password) {
-    alert("Por favor, completa todos los campos.");
+    showToast("⚠️ Completa todos los campos.", "warning");
     return;
   }
 
-  const { data, error } = await client.auth.signUp({
-    email,
-    password,
-  });
+  const { error } = await client.auth.signUp({ email, password });
 
   if (error) {
-    alert("Error: " + error.message);
+    showToast("❌ " + error.message, "error");
   } else {
-    alert("Registro exitoso. Revisa tu correo para confirmar.");
+    showToast("✅ Registro exitoso. Revisa tu correo.", "success");
     toggleForms();
   }
 }
@@ -37,19 +31,16 @@ async function login() {
   const password = document.getElementById("password").value;
 
   if (!email || !password) {
-    alert("Por favor, completa todos los campos.");
+    showToast("⚠️ Completa todos los campos.", "warning");
     return;
   }
 
-  const { data, error } = await client.auth.signInWithPassword({
-    email,
-    password,
-  });
+  const { error } = await client.auth.signInWithPassword({ email, password });
 
   if (error) {
-    alert("Error: " + error.message);
+    showToast("❌ " + error.message, "error");
   } else {
-    alert("Sesión iniciada.");
+    showToast("✅ Sesión iniciada.", "success");
     window.location.href = "dashboard.html";
   }
 }
