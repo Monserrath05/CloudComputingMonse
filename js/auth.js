@@ -11,17 +11,13 @@ async function register() {
   const email = document.getElementById("reg-email").value;
   const password = document.getElementById("reg-password").value;
 
-  if (!email || !password) {
-    showToast("⚠️ Completa todos los campos.", "warning");
-    return;
-  }
+  if (!email || !password) return showToast("Completa todos los campos", "error");
 
   const { error } = await client.auth.signUp({ email, password });
 
-  if (error) {
-    showToast("❌ " + error.message, "error");
-  } else {
-    showToast("✅ Registro exitoso. Revisa tu correo.", "success");
+  if (error) showToast(error.message, "error");
+  else {
+    showToast("Registro exitoso. Revisa tu correo.", "success");
     toggleForms();
   }
 }
@@ -30,17 +26,13 @@ async function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
-  if (!email || !password) {
-    showToast("⚠️ Completa todos los campos.", "warning");
-    return;
-  }
+  if (!email || !password) return showToast("Completa todos los campos", "error");
 
   const { error } = await client.auth.signInWithPassword({ email, password });
 
-  if (error) {
-    showToast("❌ " + error.message, "error");
-  } else {
-    showToast("✅ Sesión iniciada.", "success");
+  if (error) showToast(error.message, "error");
+  else {
+    showToast("Sesión iniciada", "success");
     window.location.href = "dashboard.html";
   }
 }

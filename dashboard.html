@@ -9,35 +9,34 @@
 <body>
   <div class="container">
     <h1>Panel de Estudiantes</h1>
-    <button onclick="cerrarSesion()" class="cerrar-btn">Cerrar sesión</button>
-  
-    <section class="card">
+    <button onclick="cerrarSesion()">Cerrar sesión</button>
+
+    <div class="card">
       <h2>Registrar estudiante</h2>
-      <input type="text" id="nombre" placeholder="Nombre del estudiante" />
+      <input type="text" id="nombre" placeholder="Nombre" />
       <input type="email" id="correo" placeholder="Correo" />
       <input type="text" id="clase" placeholder="Clase" />
       <button onclick="agregarEstudiante()">Agregar</button>
-    </section>
+    </div>
 
-    <section class="card">
+    <div class="card">
       <h2>Lista de estudiantes</h2>
       <ul id="lista-estudiantes"></ul>
-    </section>
+    </div>
 
-    <section class="card">
+    <div class="card">
       <h2>Subir archivo</h2>
-      <label for="estudiante">Selecciona un estudiante:</label>
-      <select id="estudiante"></select><br><br>
       <input type="file" id="archivo" />
       <button onclick="subirArchivo()">Subir</button>
-    </section>
+    </div>
 
-    <section class="card">
+    <div class="card">
       <h2>Archivos subidos</h2>
       <ul id="lista-archivos"></ul>
-    </section>
+    </div>
   </div>
 
-  <script src="js/dashboard.js"></script>
+  <script src="utils.js"></script>
+  <script src="dashboard.js"></script>
 </body>
 </html>
